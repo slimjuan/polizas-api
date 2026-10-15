@@ -34,6 +34,10 @@ import time
 from pathlib import Path
 
 ENDPOINTS = ["/polizas", "/polizas/{id}", "/siniestros", "/resumen"]
+# Modificación del grupo: la estrategia que quedó en main.py para cada endpoint.
+# Si se cambia una en el código, se cambia aquí; HALLAZGOS.md explica cada una.
+ESTRATEGIAS = {"/polizas": "selectinload", "/polizas/{id}": "lazy",
+               "/siniestros": "joinedload", "/resumen": "agregada"}
 COLUMNAS = ["endpoint", "estrategia", "n_polizas", "consultas_sql", "tiempo_ms"]
 
 
@@ -90,7 +94,7 @@ def main():
                 if r.status_code >= 400:
                     raise SystemExit(f"\n{ruta} devolvió {r.status_code}. No se escribe el CSV: primero hay "
                                      f"que dejar el servicio respondiendo. Cuerpo: {r.text[:300]}")
-                fila = {"endpoint": endpoint, "estrategia": "", "n_polizas": n,
+                fila = {"endpoint": endpoint, "estrategia": ESTRATEGIAS[endpoint], "n_polizas": n,
                         "consultas_sql": contador["n"], "tiempo_ms": round(dt, 1)}
                 filas.append(fila)
                 print(f"  {endpoint:<16} n={n:<5} consultas {fila['consultas_sql']:>5}   "
@@ -101,7 +105,6 @@ def main():
         w.writeheader()
         w.writerows(filas)
     print(f"\n{a.salida} escrito con {len(filas)} filas. Base temporal: {db}")
-    print("Falta lo suyo: rellenar `estrategia` en cada fila y explicar los números.")
 
 
 if __name__ == "__main__":
