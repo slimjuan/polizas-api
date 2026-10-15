@@ -1,47 +1,65 @@
-# polizas-api-v0
+# polizas-api
 
 Servicio de gestión de pólizas de la Aseguradora Santo Tomás. Registra pólizas
 y los siniestros que se les declaran, resume la cartera y puntúa el riesgo de
 cada póliza con un modelo, guardando cada predicción.
 
-## Instalación
+Stack: FastAPI · Pydantic v2 · SQLAlchemy 2.0 · Alembic · pytest · Docker.
+Python **3.11**.
+
+## Arranque local
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate            # en Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env                 # y cambien los secretos de ejemplo
+alembic upgrade head                 # crea el esquema en la base de DATABASE_URL
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-El modelo entrenado (`modelo.pkl`) y la base de datos con datos de ejemplo
-(`app.db`) vienen en el repositorio: no hay que configurar nada.
+- La configuración se lee de `.env` o de variables de entorno (`config.py`). La
+  base es la que diga `DATABASE_URL` (por defecto `sqlite:///app.db`).
+- El esquema **no** se crea al arrancar: lo crea `alembic upgrade head`. Corran
+  ese comando cada vez que cambie la base o haya migraciones nuevas.
+- `--reload` solo es para desarrollo; no se usa en producción ni en el contenedor.
+- Datos de ejemplo, con el servicio corriendo: `python sembrar_datos.py --polizas 12`.
 
-## Puesta en marcha
-
-```bash
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
-```
-
-El mismo comando sirve en el servidor de producción. `--reload` es cómodo
-porque recoge los cambios sin reiniciar a mano.
-
-### En contenedor
+## En contenedor
 
 ```bash
 docker build -t polizas-api .
-docker run -p 8000:8000 polizas-api
+docker run -d --name polizas -p 8000:8000 polizas-api
+curl localhost:8000/health
 ```
+
+El contenedor aplica las migraciones al arrancar y escucha en `0.0.0.0:8000`, corre
+como usuario no root y tiene `HEALTHCHECK` contra `/health`. La imagen no lleva `.env`
+ni base de datos (ver `.dockerignore`). Los secretos se pasan al ejecutar:
+`docker run -e SECRETO_FIRMA=... -p 8000:8000 polizas-api`.
+
+**Persistencia:** la base vive en `/app/data/app.db`, dentro del contenedor.
+`docker restart polizas` conserva los datos, porque es el mismo contenedor con la misma
+capa escribible. `docker rm` borra esa capa: un contenedor nuevo de la misma imagen
+arranca con la base vacía. Para conservar los datos entre contenedores se usa un
+volumen: `docker run -v polizas-datos:/app/data -p 8000:8000 polizas-api`.
 
 ## Endpoints
 
-| Método | Ruta | Qué hace |
+| Método | Ruta | Respuesta |
 |---|---|---|
-| POST | `/polizas` | Crea una póliza, con sus siniestros si ya tiene |
-| GET | `/polizas` | Lista las pólizas con sus siniestros |
-| GET | `/polizas/{id}` | Consulta una póliza |
-| PUT | `/polizas/{id}` | Actualiza una póliza |
-| POST | `/polizas/{id}/siniestros` | Declara un siniestro |
-| GET | `/siniestros` | Lista los siniestros con su póliza |
-| GET | `/resumen` | Siniestros y monto total por póliza |
-| POST | `/score` | Puntúa el riesgo de una póliza y guarda la predicción |
-| GET | `/predicciones` | Histórico de predicciones |
+| POST | `/polizas` | 201 con la póliza creada · 409 si el número ya existe · 422 |
+| GET | `/polizas` | 200, cada póliza con sus siniestros |
+| GET | `/polizas/{id}` | 200 · 404 |
+| PUT | `/polizas/{id}` | 200, actualización **parcial** · 404 · 422 |
+| POST | `/polizas/{id}/siniestros` | 201 · 404 si la póliza no existe · 422 |
+| GET | `/siniestros` | 200, cada siniestro con el número de su póliza |
+| GET | `/resumen` | 200, número de siniestros y monto total por póliza |
+| POST | `/score` | 200 con `numero`, `puntaje` y `alto_riesgo`; registra la predicción · 404 · 422 |
+| GET | `/predicciones` | 200, histórico con el `numero` de la póliza |
+| GET | `/health` | 200, indica si la base de datos responde |
+
+Documentación interactiva: `http://localhost:8000/docs`.
 
 ### Ejemplo
 
@@ -50,24 +68,34 @@ curl -X POST localhost:8000/polizas \
   -H "Content-Type: application/json" \
   -d '{"numero": "POL-2026-09001", "asegurado": "Ana Rueda", "tipo": "auto", "prima": 1250000,
        "fecha_inicio": "2026-01-15", "fecha_fin": "2027-01-14"}'
-```
-
-```bash
 curl -X POST localhost:8000/score -H "Content-Type: application/json" -d '{"numero": "POL-2026-09001"}'
 ```
 
 ## Pruebas
 
 ```bash
-pytest tests/test_api.py
+pytest
 ```
 
-## Utilidades
+Corre `tests/`: la batería de contrato (`test_contrato.py`), los tests propios y la
+batería corregida de la Parte D. Los tests sustituyen la sesión con
+`app.dependency_overrides` sobre bases temporales: no tocan la base de la aplicación y
+dan el mismo resultado en corridas sucesivas.
 
-- `sembrar_datos.py` crea pólizas de ejemplo a través de la API.
-- `contar_consultas.py` cuenta las sentencias SQL que emite cada endpoint.
+## Estructura
 
-## Notas
+| Archivo | Responsabilidad |
+|---|---|
+| `main.py` | Rutas HTTP: valida la entrada, llama al dominio y traduce errores a 404/409/422 |
+| `esquemas.py` | Esquemas Pydantic de entrada (validación) y de salida (contrato) |
+| `modelos.py` | Tablas SQLAlchemy 2.0 |
+| `servicios.py` | Firma, puntuación de riesgo y resumen de cartera |
+| `database.py` | Motor, claves foráneas en SQLite y `get_db` (sesión por petición) |
+| `config.py` | `Settings` con `BaseSettings` y `get_settings()` con `lru_cache` |
+| `alembic/` | Migraciones del esquema |
 
-- Las claves están en `config.py` para que el equipo pueda probar sin configurar nada.
-- La base de datos se crea sola al arrancar si no existe.
+## Entregables del taller
+
+`EQUIPO.md`, `HALLAZGOS.md` (partes A y C), `CONSULTAS.csv`, `DICTAMEN_IA.md`,
+`tests/test_ia_corregido.py` y `BITACORA_IA.md`. Comprobación de forma:
+`python verificar_entrega.py`.
