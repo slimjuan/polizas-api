@@ -1,0 +1,22 @@
+# Lo que no debe entrar en el contexto de construcción ni en la imagen
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.pyc
+.pytest_cache
+.env
+*.db
+*.db-journal
+tests
+plantillas
+ia_tests_propuesta.py
+contar_consultas.py
+sembrar_datos.py
+verificar_entrega.py
+CONSULTAS.csv
+*.md
+Dockerfile
+.dockerignore
