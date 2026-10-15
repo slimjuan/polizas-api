@@ -1,1 +1,16 @@
+# Bytecode y cachés
+__pycache__/
 *.pyc
+.pytest_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Configuración local con secretos
+.env
+
+# Bases de datos (se crean con `alembic upgrade head`)
+*.db
+*.db-journal
