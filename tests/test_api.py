@@ -1,35 +1,35 @@
-"""Pruebas del servicio.
+"""Pruebas básicas del servicio, aisladas en una base temporal (ver conftest.py).
 
     pytest tests/test_api.py
 """
-import sys
-from pathlib import Path
-
-from fastapi.testclient import TestClient
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from main import app  # noqa: E402
-
-cliente = TestClient(app)
-
-POLIZA = {
-    "numero": "POL-TEST-00001",
-    "asegurado": "Prueba Interna",
-    "tipo": "auto",
-    "prima": 1_000_000,
-    "fecha_inicio": "2026-01-01",
-    "fecha_fin": "2026-12-31",
-}
 
 
-def test_crear_poliza():
-    r = cliente.post("/polizas", json=POLIZA)
+def test_health_indica_que_la_base_responde(cliente):
+    r = cliente.get("/health")
     assert r.status_code == 200
-    assert r.json()["numero"] == POLIZA["numero"]
+    assert r.json() == {"estado": "ok", "base_de_datos": True}
 
 
-def test_listar_polizas():
+def test_crear_poliza(cliente, poliza_valida):
+    datos = poliza_valida()
+    r = cliente.post("/polizas", json=datos)
+    assert r.status_code == 201
+    assert r.json()["numero"] == datos["numero"]
+    assert "token_firma" not in r.json()
+
+
+def test_listar_polizas(cliente, poliza_valida):
+    datos = poliza_valida()
+    cliente.post("/polizas", json=datos)
     r = cliente.get("/polizas")
     assert r.status_code == 200
-    assert any(p["numero"] == POLIZA["numero"] for p in r.json())
+    assert [p["numero"] for p in r.json()] == [datos["numero"]]
+
+
+def test_siniestros_traen_el_numero_de_su_poliza(cliente, poliza_valida):
+    creada = cliente.post("/polizas", json=poliza_valida()).json()
+    cliente.post(f"/polizas/{creada['id']}/siniestros",
+                 json={"fecha": "2026-03-02", "monto": 850_000, "descripcion": "Choque leve"})
+    r = cliente.get("/siniestros")
+    assert r.status_code == 200
+    assert r.json()[0]["numero_poliza"] == creada["numero"]
