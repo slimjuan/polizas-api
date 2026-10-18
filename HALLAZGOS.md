@@ -32,16 +32,24 @@ o son consecuencia directa de ella: `create_all` en el arranque en vez de migrac
 esquema de salida), la ausencia de `/health` (B10) y el README, que recomendaba
 `--reload` en producción y presentaba los secretos en `config.py` como una comodidad.
 
-**Modificación a `contar_consultas.py`:** solo se añadió el diccionario `ESTRATEGIAS`,
+**Modificaciones a `contar_consultas.py`:** se añadió el diccionario `ESTRATEGIAS`,
 que rellena la columna `estrategia` con la estrategia que quedó en `main.py` para cada
-endpoint. El conteo y la siembra no se tocaron.
+endpoint. Al reproducirlo en Windows también se normalizó la ruta SQLite y se ubicó la
+base temporal dentro del proyecto; al finalizar se cierra el motor antes de limpiar el
+archivo temporal. La siembra y la lógica del conteo no se cambiaron.
 
 ---
 
 # Parte C — Interpretación de las consultas
 
-Conteos de `python contar_consultas.py` (10 y 2000 pólizas, tres siniestros cada una),
-que están en `CONSULTAS.csv`. Antes de decidir medimos las cuatro estrategias en cada
+Reproduje `python contar_consultas.py` en Windows con Python 3.12.10 (entorno virtual
+creado con `requirements.txt`). El script aplicó la migración a una base SQLite temporal,
+sembró 10 y 2000 pólizas con tres siniestros por póliza y midió cada endpoint con
+TestClient; los resultados quedaron en `CONSULTAS.csv`. En ambos tamaños los conteos
+coinciden con la medición previa: `/polizas` hizo 2 y 5 consultas, `/polizas/{id}` hizo
+2 y 2, `/siniestros` hizo 1 y 1, y `/resumen` hizo 1 y 1. Los tiempos medidos en esta
+máquina fueron, respectivamente, 3.9/162.9 ms, 2.4/2.4 ms, 2.2/126.5 ms y 3.7/13.6 ms;
+varían según equipo y carga. Antes de decidir medimos las cuatro estrategias en cada
 endpoint con la misma siembra y la misma serialización que usa la ruta:
 
 | Endpoint | lazy (10 → 2000) | selectinload | joinedload | agregada | Quedó en el código |

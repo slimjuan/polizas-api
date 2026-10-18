@@ -53,9 +53,15 @@ def main():
     sys.path.insert(0, str(raiz))
 
     # 1 · base de datos temporal, ANTES de importar la aplicación
-    carpeta = Path(tempfile.mkdtemp(prefix="consultas-"))
+    # En Windows el directorio temporal del sistema puede no estar disponible
+    # para el proceso; mantener la base de prueba dentro del proyecto también
+    # garantiza que el directorio temporal es escribible.
+    temporal = tempfile.TemporaryDirectory(prefix="consultas-", dir=raiz)
+    carpeta = Path(temporal.name)
     db = carpeta / "consultas.db"
-    os.environ["DATABASE_URL"] = f"sqlite:///{db}"
+    # SQLite URLs usan barras incluso en Windows; las barras invertidas de
+    # Path.as_posix() evitan que SQLite interprete mal la ruta absoluta.
+    os.environ["DATABASE_URL"] = f"sqlite:///{db.as_posix()}"
     if (raiz / "alembic.ini").exists():
         subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
 
@@ -99,6 +105,12 @@ def main():
                 filas.append(fila)
                 print(f"  {endpoint:<16} n={n:<5} consultas {fila['consultas_sql']:>5}   "
                       f"{fila['tiempo_ms']:>8.1f} ms")
+
+    # La conexión global de la aplicación apunta a esta base temporal; cerrarla
+    # antes de borrar el directorio evita dejar el archivo bloqueado en Windows.
+    from database import engine
+    engine.dispose()
+    temporal.cleanup()
 
     with open(a.salida, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNAS)

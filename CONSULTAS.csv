@@ -1,9 +1,9 @@
 endpoint,estrategia,n_polizas,consultas_sql,tiempo_ms
-/polizas,selectinload,10,2,1.2
-/polizas/{id},lazy,10,2,0.8
-/siniestros,joinedload,10,1,0.8
-/resumen,agregada,10,1,0.7
-/polizas,selectinload,2000,5,62.6
-/polizas/{id},lazy,2000,2,0.8
-/siniestros,joinedload,2000,1,55.5
-/resumen,agregada,2000,1,5.2
+/polizas,selectinload,10,2,3.9
+/polizas/{id},lazy,10,2,2.4
+/siniestros,joinedload,10,1,2.2
+/resumen,agregada,10,1,3.7
+/polizas,selectinload,2000,5,162.9
+/polizas/{id},lazy,2000,2,2.4
+/siniestros,joinedload,2000,1,126.5
+/resumen,agregada,2000,1,13.6
