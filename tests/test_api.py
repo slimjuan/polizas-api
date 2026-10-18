@@ -10,6 +10,21 @@ def test_health_indica_que_la_base_responde(cliente):
     assert r.json() == {"estado": "ok", "base_de_datos": True}
 
 
+def test_health_indica_degradado_si_la_base_no_responde(cliente, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+    from sqlalchemy.orm import Session
+
+    def fallar_consulta(self, *args, **kwargs):
+        raise SQLAlchemyError("base de datos no disponible")
+
+    monkeypatch.setattr(Session, "execute", fallar_consulta)
+
+    r = cliente.get("/health")
+
+    assert r.status_code == 200
+    assert r.json() == {"estado": "degradado", "base_de_datos": False}
+
+
 def test_crear_poliza(cliente, poliza_valida):
     datos = poliza_valida()
     r = cliente.post("/polizas", json=datos)
