@@ -33,3 +33,17 @@ def test_siniestros_traen_el_numero_de_su_poliza(cliente, poliza_valida):
     r = cliente.get("/siniestros")
     assert r.status_code == 200
     assert r.json()[0]["numero_poliza"] == creada["numero"]
+
+
+def test_resumen_vacio(cliente):
+    r = cliente.get("/resumen")
+
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_predicciones_vacias(cliente):
+    r = cliente.get("/predicciones")
+
+    assert r.status_code == 200
+    assert r.json() == []
