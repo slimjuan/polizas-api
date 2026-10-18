@@ -1,6 +1,6 @@
 # Bitácora de uso de IA
 
-**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca
+**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca, Juan Diego Gallo Quintero, David Santiago Sachez Guarnizo
 **Herramientas usadas:** Claude (Claude Code, aplicación de escritorio)
 
 > Las tres secciones son obligatorias. **`## Rechazado` es la que se califica.**
