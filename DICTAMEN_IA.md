@@ -1,6 +1,6 @@
 # Dictamen sobre `ia_tests_propuesta.py` — Parte D
 
-**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca, Juan Diego Gallo Quintero, David Santiago Sachez Guarnizo
+**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca, Juan Diego Gallo Quintero, David Santiago Sánchez Guarnizo
 
 > Las tres mutaciones se aplicaron sobre el servicio ya corregido (Parte B), se
 > corrieron el test original y el corregido, y se restauró el archivo con

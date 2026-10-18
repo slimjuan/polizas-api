@@ -12,4 +12,4 @@
 |-----------------|----------------------|-----------------|
 | Juan David Parada Fonseca | juanparadaf@usantotomas.edu.co | Juan David Parada Fonseca <juandapafo400@gmail.com>; slimjuan <juandapafo400@gmail.com> |
 | Juan Diego Gallo Quintero | juangalloq@usantotomas.edu.co | Juan Diego Gallo Quintero <juangalloq@usantotomas.edu.co> |
-| David Santiago Sachez Guarnizo | davidsanchezg@usantotomas.edu.co | David Santiago Sachez Guarnizo <davidsanchezg@usantotomas.edu.co> |
+| David Santiago Sánchez Guarnizo | davidsanchezg@usantotomas.edu.co | David Santiago Sánchez Guarnizo <davidsanchezg@usantotomas.edu.co> |

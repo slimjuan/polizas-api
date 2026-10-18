@@ -1,6 +1,6 @@
 # Hallazgos — Parte A
 
-**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca, Juan Diego Gallo Quintero, David Santiago Sachez Guarnizo
+**Grupo:** <número> · **Integrantes:** Juan David Parada Fonseca, Juan Diego Gallo Quintero, David Santiago Sánchez Guarnizo
 
 > Todos los comandos se ejecutaron **en este orden**, sobre un checkout limpio de
 > `v0-semilla` (con su `app.db` original) y con el servicio levantado como dice su
