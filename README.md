@@ -29,20 +29,50 @@ uvicorn main:app --host 127.0.0.1 --port 8000
 
 ```bash
 docker build -t polizas-api .
-docker run -d --name polizas -p 8000:8000 polizas-api
-curl localhost:8000/health
+docker run -d --name polizas -p 8000:8000 -v polizas-datos:/app/data polizas-api
+docker ps --filter name=polizas
+curl http://localhost:8000/health
+docker logs polizas
 ```
 
-El contenedor aplica las migraciones al arrancar y escucha en `0.0.0.0:8000`, corre
-como usuario no root y tiene `HEALTHCHECK` contra `/health`. La imagen no lleva `.env`
-ni base de datos (ver `.dockerignore`). Los secretos se pasan al ejecutar:
-`docker run -e SECRETO_FIRMA=... -p 8000:8000 polizas-api`.
+`docker ps` debe mostrar el estado `healthy`; `/health` responde
+`{"estado":"ok","base_de_datos":true}`. El contenedor aplica las migraciones al
+arrancar y escucha en `0.0.0.0:8000`. En Windows PowerShell, usen `curl.exe` en lugar de
+`curl` si este nombre está asociado a `Invoke-WebRequest`.
+
+Para probar persistencia, creen una póliza desde `http://localhost:8000/docs` y
+consúltenla con `curl http://localhost:8000/polizas`. Reiniciar el mismo contenedor
+conserva su capa escribible:
+
+```bash
+docker restart polizas
+curl http://localhost:8000/polizas
+```
+
+El volumen permite conservar los datos incluso al reemplazar el contenedor. El comando
+inicial ya monta `polizas-datos` en `/app/data`; para probarlo, eliminen el contenedor y
+creen otro con el mismo volumen:
+
+```bash
+docker rm -f polizas
+docker run -d --name polizas -p 8000:8000 -v polizas-datos:/app/data polizas-api
+curl http://localhost:8000/polizas
+```
+
+La póliza creada debe seguir apareciendo. Para cerrar la demo, eliminen el contenedor;
+si también quieren borrar los datos persistidos, eliminen el volumen explícitamente:
+
+```bash
+docker rm -f polizas
+docker volume rm polizas-datos
+```
+
+El contenedor corre como usuario no root y tiene `HEALTHCHECK` contra `/health`. La
+imagen no lleva `.env` ni base de datos (ver `.dockerignore`). Los secretos se pasan al
+ejecutar, por ejemplo: `docker run -e SECRETO_FIRMA=... -p 8000:8000 polizas-api`.
 
 **Persistencia:** la base vive en `/app/data/app.db`, dentro del contenedor.
-`docker restart polizas` conserva los datos, porque es el mismo contenedor con la misma
-capa escribible. `docker rm` borra esa capa: un contenedor nuevo de la misma imagen
-arranca con la base vacía. Para conservar los datos entre contenedores se usa un
-volumen: `docker run -v polizas-datos:/app/data -p 8000:8000 polizas-api`.
+Un volumen nombrado como `polizas-datos` la conserva entre contenedores distintos.
 
 ## Endpoints
 
