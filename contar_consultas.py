@@ -59,8 +59,9 @@ def main():
     temporal = tempfile.TemporaryDirectory(prefix="consultas-", dir=raiz)
     carpeta = Path(temporal.name)
     db = carpeta / "consultas.db"
-    # SQLite URLs usan barras incluso en Windows; las barras invertidas de
-    # Path.as_posix() evitan que SQLite interprete mal la ruta absoluta.
+    # Las URL de SQLite usan barras normales (/) incluso en Windows: as_posix()
+    # convierte las barras invertidas de la ruta de Windows (C:\...) en barras
+    # normales para que SQLAlchemy no interprete mal la ruta absoluta.
     os.environ["DATABASE_URL"] = f"sqlite:///{db.as_posix()}"
     if (raiz / "alembic.ini").exists():
         subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
